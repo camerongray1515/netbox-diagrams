@@ -1,0 +1,11 @@
+#editorContainer * {
+    box-sizing: content-box;
+}
+
+.geDialog {
+    box-sizing: content-box;
+}
+
+.geFooterContainer {
+    display: none;
+}

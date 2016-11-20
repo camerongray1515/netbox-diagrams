@@ -1,0 +1,10 @@
+# Work in progress!
+
+This is a simple project to integrate mxGraph (the core component of draw.io)
+into NetBox (https://github.com/digitalocean/netbox).  Initially it will
+allow the editor to be used as part of the main NetBox interface and will save
+and load diagrams from the NetBox database.  This could likely be enhanced to
+allow objects in the diagrams to be linked to entities within NetBox itself.
+
+Since NetBox does not provide official support for plugins, it takes some
+slight modifications to integrate this into NetBox - Documentation will follow.
