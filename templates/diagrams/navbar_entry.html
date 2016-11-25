@@ -1,0 +1,3 @@
+{% if request.user.is_authenticated %}
+    <li><a href="{% url 'diagrams:index' %}">Diagrams</a></li>
+{% endif %}

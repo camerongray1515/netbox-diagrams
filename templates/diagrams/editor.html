@@ -5,7 +5,9 @@
     <link rel="stylesheet" type="text/css" href="/static/diagrams/styles/overrides.css">
 
     <div id="editorContainer">
-
+        <div class="well col-md-4 col-md-offset-4">
+            <h1 class="text-center">Editor Loading...</h1>
+        </div>
     </div>
 {% endblock %}
 
@@ -26,38 +28,6 @@
     <script type="text/javascript" src="/static/diagrams/js/Dialogs.js"></script>
 
     <script type="text/javascript">
-        // Parses URL parameters. Supported parameters are:
-        // - lang=xy: Specifies the language of the user interface.
-        // - touch=1: Enables a touch-style user interface.
-        // - storage=local: Enables HTML5 local storage.
-        // - chrome=0: Chromeless mode.
-        var urlParams = (function(url)
-        {
-            var result = new Object();
-            var idx = url.lastIndexOf('?');
-
-            if (idx > 0)
-            {
-                var params = url.substring(idx + 1).split('&');
-
-                for (var i = 0; i < params.length; i++)
-                {
-                    idx = params[i].indexOf('=');
-
-                    if (idx > 0)
-                    {
-                        result[params[i].substring(0, idx)] = params[i].substring(idx + 1);
-                    }
-                }
-            }
-
-            return result;
-        })(window.location.href);
-
-        // Default resources are included in grapheditor resources
-        mxLoadResources = false;
-    </script>
-    <script type="text/javascript">
         // Extends EditorUi to update I/O action states based on availability of backend
         (function()
         {
@@ -67,21 +37,46 @@
             {
                 editorUiInit.apply(this, arguments);
                 this.actions.get('export').setEnabled(false);
+                this.actions.get('open').setEnabled(true);
+                this.actions.get('import').setEnabled(true);
+                this.actions.get('save').setEnabled(true);
+                this.actions.get('saveAs').setEnabled(false);
 
-                // Updates action states which require a backend
-                if (!Editor.useLocalStorage)
+                this.editor.getOrCreateFilename = function()
                 {
-                    mxUtils.post(OPEN_URL, '', mxUtils.bind(this, function(req)
-                    {
-                        var enabled = req.getStatus() != 404;
-                        this.actions.get('open').setEnabled(enabled || Graph.fileSupport);
-                        this.actions.get('import').setEnabled(enabled || Graph.fileSupport);
-                        this.actions.get('save').setEnabled(enabled);
-                        this.actions.get('saveAs').setEnabled(enabled);
-                        this.actions.get('export').setEnabled(enabled);
-                    }));
-                }
+                    return this.filename || mxResources.get('diagram');
+                };
+
+                this.editor.diagramId = null;
+                {% if diagram_filename and diagram_xml %}
+                    this.editor.diagramId = {{ diagram_id }};
+                    this.editor.filename = "{{ diagram_filename }}";
+                    this.editor.setGraphXml(mxUtils.parseXml("{{ diagram_xml | escapejs }}").documentElement);
+                {% endif %}
             };
+
+            EditorUi.prototype.save = function(filename) {
+                if (!this.editor.diagramId) {
+                    $.post("{% url 'diagrams:create' %}", {
+                        "filename": filename,
+                        "xml": this.editor.getGraphXml(true).outerHTML
+                    }, function(response) {
+                        alert(response.message);
+                        if (response.success) {
+                            window.onbeforeunload = null; // Stop "changes may not be saved" message
+                            window.location.href = window.location.origin + "{% url 'diagrams:editor' %}" + response.diagram_id;
+                        }
+                    })
+                } else {
+                    $.post("{% url 'diagrams:update' %}", {
+                        "filename": filename,
+                        "xml": this.editor.getGraphXml(true).outerHTML,
+                        "diagram_id": this.editor.diagramId
+                    }, function(response) {
+                        alert(response.message);
+                    })
+                }
+            }
 
             // Adds required resources (disables loading of fallback properties, this can only
             // be used if we know that all keys are defined in the language specific file)
@@ -100,7 +95,7 @@
                 themes[Graph.prototype.defaultThemeName] = xhr[1].getDocumentElement();
 
                 // Main
-                new EditorUi(new Editor(urlParams['chrome'] == '0', themes), document.getElementById("editorContainer"));
+                window.editor = new EditorUi(new Editor(urlParams['chrome'] == '0', themes), document.getElementById("editorContainer"));
             }, function()
             {
                 document.body.innerHTML = '<center style="margin-top:10%;">Error loading resource files. Please check browser console.</center>';

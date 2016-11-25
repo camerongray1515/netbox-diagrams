@@ -1,4 +1,84 @@
 from django.shortcuts import render_to_response
+from django.http import JsonResponse, Http404
+from django.shortcuts import redirect
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
+from django.urls import reverse
+from urllib import unquote
+from diagrams.models import Diagram
 
 def index(request):
-    return render_to_response("diagrams/index.html", {"request": request})
+    diagrams = Diagram.objects.all()
+    return render_to_response("diagrams/list.html", {"diagrams": diagrams})
+
+def editor(request, diagram_id=None):
+    diagram_xml = None
+    diagram_filename = None
+    if diagram_id:
+        try:
+            diagram = Diagram.objects.get(id=diagram_id)
+            diagram_xml = diagram.diagram
+            diagram_filename = diagram.name
+        except (ObjectDoesNotExist, ValueError) as ex:
+            raise Http404
+
+    return render_to_response("diagrams/editor.html", {
+        "request": request,
+        "diagram_xml": diagram_xml,
+        "diagram_filename": diagram_filename,
+        "diagram_id": diagram_id
+    })
+
+@csrf_exempt
+def delete(request, diagram_id):
+    try:
+        diagram = Diagram.objects.get(id=diagram_id)
+    except (ObjectDoesNotExist, ValueError) as ex:
+        raise Http404
+
+    if request.method == "POST":
+        diagram.delete()
+        return redirect(reverse("diagrams:index"))
+    else:
+        return render_to_response("utilities/obj_delete.html", {
+            "obj_type": "diagram",
+            "obj": diagram.name,
+            "cancel_url": reverse("diagrams:index")
+        })
+
+@csrf_exempt
+def update(request):
+    if request.method == "POST":
+        filename = unquote(request.POST.get("filename"))
+        xml = unquote(request.POST.get("xml"))
+        diagram_id = unquote(request.POST.get("diagram_id"))
+
+        try:
+            diagram = Diagram.objects.get(id=diagram_id)
+        except ObjectDoesNotExist as ex:
+            return JsonResponse({"success": False,
+                "message": "Diagram does not exist!"})
+
+        diagram.name = filename
+        diagram.diagram = xml
+        diagram.save()
+
+        return JsonResponse({"success": True,
+            "message": "Diagram saved successfully!"})
+
+@csrf_exempt
+def create(request):
+    if request.method == "POST":
+        filename = unquote(request.POST.get("filename"))
+        xml = unquote(request.POST.get("xml"))
+
+        if Diagram.objects.filter(name=filename).count():
+            return JsonResponse({"success": False,
+                "message": "A diagram with that name already exists"})
+
+        diagram = Diagram(name=filename, diagram=xml)
+        diagram.save()
+
+        return JsonResponse({"success": True,
+            "message": "Diagram created successfully!",
+            "diagram_id": diagram.id})

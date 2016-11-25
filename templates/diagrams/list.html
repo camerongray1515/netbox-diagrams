@@ -1,0 +1,40 @@
+{% extends '_base.html' %}
+{% load helpers %}
+
+{% block title %}Diagrams{% endblock %}
+
+{% block content %}
+<div class="pull-right">
+	<a href="{% url 'diagrams:editor' %}" class="btn btn-primary">
+		<span class="fa fa-plus" aria-hidden="true"></span>
+		Create a new Diagram
+	</a>
+</div>
+<h1>Diagrams</h1>
+<div class="row">
+	<div class="col-md-12">
+        <div class="table-container">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="name">Name</th>
+                        <th class="actions">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for diagram in diagrams %}
+                        <tr>
+                            <td><a href="{% url 'diagrams:editor' %}?id={{ diagram.id }}">{{ diagram.name }}</a></td>
+                            <td>
+                                <a href="{% url 'diagrams:editor' diagram.id %}" class="btn btn-warning btn-sm"><span class="glyphicon glyphicon-pencil"></span> Edit</a>
+                                <a href="{% url 'diagrams:delete' diagram.id %}" class="btn btn-danger btn-sm"><span class="glyphicon glyphicon-trash"></span> Delete</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
