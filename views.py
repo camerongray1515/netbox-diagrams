@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.http import JsonResponse, Http404
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
@@ -9,7 +9,9 @@ from diagrams.models import Diagram
 
 def index(request):
     diagrams = Diagram.objects.all()
-    return render_to_response("diagrams/list.html", {"diagrams": diagrams})
+    return render(request, "diagrams/list.html", {
+        "diagrams": diagrams
+    })
 
 def editor(request, diagram_id=None):
     diagram_xml = None
@@ -22,8 +24,7 @@ def editor(request, diagram_id=None):
         except (ObjectDoesNotExist, ValueError) as ex:
             raise Http404
 
-    return render_to_response("diagrams/editor.html", {
-        "request": request,
+    return render(request, "diagrams/editor.html", {
         "diagram_xml": diagram_xml,
         "diagram_filename": diagram_filename,
         "diagram_id": diagram_id
@@ -40,7 +41,7 @@ def delete(request, diagram_id):
         diagram.delete()
         return redirect(reverse("diagrams:index"))
     else:
-        return render_to_response("utilities/obj_delete.html", {
+        return render(request, "utilities/obj_delete.html", {
             "obj_type": "diagram",
             "obj": diagram.name,
             "cancel_url": reverse("diagrams:index")
