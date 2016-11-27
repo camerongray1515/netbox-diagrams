@@ -25,9 +25,12 @@
                 <tbody>
                     {% for diagram in diagrams %}
                         <tr>
-                            <td><a href="{% url 'diagrams:editor' %}?id={{ diagram.id }}">{{ diagram.name }}</a></td>
+                            <td><a href="{% url 'diagrams:editor' diagram.id %}">{{ diagram.name }}</a></td>
                             <td>
-                                <a href="{% url 'diagrams:editor' diagram.id %}" class="btn btn-warning btn-sm"><span class="glyphicon glyphicon-pencil"></span> Edit</a>
+                                <a href="{% url 'diagrams:editor' diagram.id %}" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-eye-open"></span> View/Edit</a>
+                                <a href="{% url 'diagrams:export' diagram.id %}" class="btn btn-success btn-sm"><span class="glyphicon glyphicon-export"></span> Export</a>
+                                <button class="btn btn-warning btn-sm btn-rename" data-diagram-id="{{ diagram.id }}" data-diagram-name="{{ diagram.name }}"><span class="glyphicon glyphicon-edit"></span> Rename</button>
+                                <button class="btn btn-info btn-sm btn-duplicate" data-diagram-id="{{ diagram.id }}" data-diagram-name="{{ diagram.name }}"><span class="glyphicon glyphicon-duplicate"></span> Duplicate</button>
                                 <a href="{% url 'diagrams:delete' diagram.id %}" class="btn btn-danger btn-sm"><span class="glyphicon glyphicon-trash"></span> Delete</a>
                             </td>
                         </tr>
@@ -37,4 +40,46 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascript %}
+<script type="text/javascript">
+    $(document).ready(function() {
+        $(".btn-rename").click(function() {
+            var diagramId = $(this).attr("data-diagram-id");
+            var diagramName = $(this).attr("data-diagram-name");
+            var newName = prompt("Rename \"" + diagramName + "\" to", diagramName);
+
+            if (newName == null) { // Cancel was pressed
+                return;
+            }
+
+            $.post("{% url 'diagrams:rename' %}", {
+                "diagram_id": diagramId,
+                "new_name": newName
+            }, function(response) {
+                alert(response.message);
+                window.location.reload();
+            });
+        });
+
+        $(".btn-duplicate").click(function() {
+            var diagramId = $(this).attr("data-diagram-id");
+            var diagramName = $(this).attr("data-diagram-name");
+            var newName = prompt("Name for new diagram", "Copy of " + diagramName);
+
+            if (newName == null) { // Cancel was pressed
+                return;
+            }
+
+            $.post("{% url 'diagrams:duplicate' %}", {
+                "diagram_id": diagramId,
+                "new_name": newName
+            }, function(response) {
+                alert(response.message);
+                window.location.reload();
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -1,3 +1,12 @@
+{% load helpers %}
 {% if request.user.is_authenticated %}
-    <li><a href="{% url 'diagrams:index' %}">Diagrams</a></li>
+    <li class="dropdown{% if request.path|startswith:'/diagrams/' %} active{% endif %}">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Diagrams <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            <li><a href="{% url 'diagrams:index' %}"><i class="fa fa-search" aria-hidden="true"></i> Diagrams</a></li>
+            {% if perms.secrets.add_secretrole %}
+                <li><a href="{% url 'diagrams:editor' %}"><i class="fa fa-plus" aria-hidden="true"></i> Create a new Diagram</a></li>
+            {% endif %}
+        </ul>
+    </li>
 {% endif %}

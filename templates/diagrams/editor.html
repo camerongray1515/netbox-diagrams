@@ -47,11 +47,12 @@
                     return this.filename || mxResources.get('diagram');
                 };
 
-                this.editor.diagramId = null;
+                window.newFile = true;
                 {% if diagram_filename and diagram_xml %}
                     this.editor.diagramId = {{ diagram_id }};
                     this.editor.filename = "{{ diagram_filename }}";
                     this.editor.setGraphXml(mxUtils.parseXml("{{ diagram_xml | escapejs }}").documentElement);
+                    window.newFile = false;
                 {% endif %}
             };
 
@@ -96,6 +97,48 @@
 
                 // Main
                 window.editor = new EditorUi(new Editor(urlParams['chrome'] == '0', themes), document.getElementById("editorContainer"));
+
+                // In order to get the palettes in the correct order we will remove all the default ones then add the ones we want in the correct order
+                for (var palette in window.editor.sidebar.palettes) {
+                    window.editor.sidebar.removePalette(palette);
+                }
+
+                window.editor.sidebar.addSearchPalette(true);
+                var ciscoStencils = ["buildings.xml", "computers_and_peripherals.xml", "controllers_and_modules.xml", "directors.xml",
+                    "hubs_and_gateways.xml", "misc.xml", "modems_and_phones.xml", "people.xml", "routers.xml", "security.xml", "servers.xml",
+                    "storage.xml", "switches.xml", "wireless.xml"];
+                for (var i = 0; i < ciscoStencils.length; i++) {
+                    var filename = ciscoStencils[i];
+                    var name = filename.replace(".xml", "");
+                    var title = "Cisco / " + name.toLowerCase().split('_').map(function(word) {
+                        return (word.charAt(0).toUpperCase() + word.slice(1));
+                    }).join(' ');
+                    window.editor.sidebar.addStencilPalette(name, title, STENCIL_PATH + '/cisco/' + filename,
+		                ';whiteSpace=wrap;html=1;fillColor=#036897;strokeColor=#FFFFFF;strokeWidth=1');
+                }
+                window.editor.sidebar.addGeneralPalette(false);
+            	window.editor.sidebar.addMiscPalette(false);
+            	window.editor.sidebar.addAdvancedPalette(false);
+            	window.editor.sidebar.addStencilPalette('basic', mxResources.get('basic'), STENCIL_PATH + '/basic.xml',
+            		';whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2');
+            	window.editor.sidebar.addStencilPalette('arrows', mxResources.get('arrows'), STENCIL_PATH + '/arrows.xml',
+            		';whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2');
+            	window.editor.sidebar.addUmlPalette(false);
+            	window.editor.sidebar.addBpmnPalette(STENCIL_PATH, false);
+            	window.editor.sidebar.addStencilPalette('flowchart', 'Flowchart', STENCIL_PATH + '/flowchart.xml',
+            		';whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2');
+            	window.editor.sidebar.addImagePalette('clipart', mxResources.get('clipart'), STENCIL_PATH + '/clipart/', '_128x128.png',
+            		['Earth_globe', 'Empty_Folder', 'Full_Folder', 'Gear', 'Lock', 'Software', 'Virus', 'Email',
+            		 'Database', 'Router_Icon', 'iPad', 'iMac', 'Laptop', 'MacBook', 'Monitor_Tower', 'Printer',
+            		 'Server_Tower', 'Workstation', 'Firewall_02', 'Wireless_Router_N', 'Credit_Card',
+            		 'Piggy_Bank', 'Graph', 'Safe', 'Shopping_Cart', 'Suit1', 'Suit2', 'Suit3', 'Pilot1',
+            		 'Worker1', 'Soldier1', 'Doctor1', 'Tech1', 'Security1', 'Telesales1'], null,
+            		 {'Wireless_Router_N': 'wireless router switch wap wifi access point wlan',
+            		  'Router_Icon': 'router switch'});
+
+                if (window.newFile) {
+                    window.editor.setPageFormat(mxConstants.PAGE_FORMAT_A4_LANDSCAPE);
+                }
             }, function()
             {
                 document.body.innerHTML = '<center style="margin-top:10%;">Error loading resource files. Please check browser console.</center>';
